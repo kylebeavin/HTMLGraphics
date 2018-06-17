@@ -13,6 +13,7 @@ canvas {
 <script>
 
 var myGamePiece;
+var myObstacles = [];
 
 function startGame() {
     myGamePiece = new component(30, 30, "red", 10, 120);
@@ -26,10 +27,14 @@ var myGameArea = {
         this.canvas.height = 270;
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.frameNo = 0;
         this.interval = setInterval(updateGameArea, 20);
     },
     clear : function() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+    stop : function() {
+        clearInterval(this.interval);
     }
 }
 
@@ -48,13 +53,53 @@ function component(width, height, color, x, y) {
     this.newPos = function() {
         this.x += this.speedX;
         this.y += this.speedY;        
-    }    
+    }
+    this.crashWith = function(otherobj) {
+        var myLeft = this.x;
+        var myRight = this.x + (this.width);
+        var myTop = this.y;
+        var myBottom = this.y + (this.height);
+        var otherLeft = otherobj.x;
+        var otherRight = otherobj.x + (otherobj.width);
+        var otherTop = otherobj.y;
+        var otherBottom = otherobj.y + (otherobj.height);
+        var crash = true;
+        if ((myBottom < otherTop) ||
+                (myTop > otherBottom) ||
+                (myRight < otherLeft) ||
+                (myLeft > otherRight)) {
+            crash = false;
+        }
+        return crash;
+    } 
 }
 
 function updateGameArea() {
-    myGameArea.clear();
-    myGamePiece.newPos();    
-    myGamePiece.update();
+    var x, y;
+    for (i = 0; i < myObstacles.length; i += 1) {
+        if (myGamePiece.crashWith(myObstacles[i])) {
+            myGameArea.stop();
+            return;
+        }
+    }
+        myGameArea.clear();
+        myGameArea.frameNo += 1;
+        if (myGameArea.frameNo == 1 || everyInterval(150)) {
+            x = myGameArea.canvas.width;
+            y = myGameArea.canvas.height - 200
+            myObstacles.push(new component(10, 200, "green", x, y));
+        }
+        for (i = 0; i < myObstacles.length; i += 1) {
+            myObstacles[i].x += -1;
+            myObstacles[i].update();
+        }
+            myGamePiece.newPos();    
+            myGamePiece.update();
+}
+
+function everyInterval(n) {
+    if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
+    return false;
 }
 
 function moveup() {
@@ -77,6 +122,7 @@ function clearmove() {
     myGamePiece.speedX = 0; 
     myGamePiece.speedY = 0; 
 }
+
 </script>
 <div style="text-align:center;width:480px;">
   <button onmousedown="moveup()" onmouseup="clearmove()" ontouchstart="moveup()">UP</button><br><br>
